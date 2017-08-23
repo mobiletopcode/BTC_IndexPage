@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <link rel="stylesheet" href="./bootstrap-3.3.7-dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="style.css"/>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,900" rel="stylesheet">
+    <script src="bootstrap-3.3.7-dist/js/jquery.js"></script>
+	<script src="bootstrap-3.3.7-dist/js/js.cookie.js"></script>
+    <script src="bootstrap-3.3.7-dist/js/bootstrap.min.js"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+</head>
+
+<body>
+
+<div class="container-fluid top-nav">
+    <div class="container">
+        <nav class="navbar navbar-default">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="https://www.tidebit.com/" target="_blank">TideInfo</a>
+                </div>
+                <div id="navbar" class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav">
+                        <li class="active"><a href="javascript:">markets</a></li>
+                        <li><a href="http://grow.tidebit.com/" target="_blank">news</a></li>
+                    </ul>
+                </div><!--/.nav-collapse -->
+            </div><!--/.container-fluid -->
+        </nav>
+    </div>
+</div>
+<div class="container">
+    <div class="row m-b-50">
+        <div class="col-xs-12 col-sm-12 col-md-5">
+            <div class="left-box">
+                <h1>BTC INDEX </h1>
+                <h2><i id="signal" class="glyphicon"></i><label class="lastprice" style="font-weight:400;"></label> <span class="diff"></span> <span class="last"></span></h2>
+                <p><i><span class="datedisp"></span></i></p>
+                <div class="trading">
+                    <a href="https://www.tidebit.com/" target="_blank">
+						<h3>start trading <span>TideBit</span></h3>
+					</a>
+                </div>
+                <span class="risk">Your capital is at risk</span>
+            </div>
+        </div>
+        <div class="col-xs-12 col-sm-12 col-md-7">
+            <div class="parent">
+                <div class="right-box">
+					<a href="https://www.tidebit.com/" target="_blank">
+						<div class="inner-right-box">
+							<img src="images/logo_03.png" alt="#"/>
+							<button class="btn btn-info pull-right m-t-10">start trading now</button>
+						</div>
+					</a>
+                </div>				
+            </div>
+            <ul class="unit-list">
+                <li>1D</li>
+                <li>3D</li>
+                <li>1W</li>
+                <li>1M</li>
+                <li>3M</li>
+                <li>6M</li>
+                <li>1Y</li>
+                <li>Time Frame</li>
+            </ul>
+        </div>
+        <div class="col-md-12 m-b-20">
+            <div id="chart-container" style="width: 100%; margin: 0 auto"></div>            
+        </div>
+        <div class="col-xs-6 chart-values">
+            <small>open</small>
+            <div class="dataopen"></div>
+        </div>
+        <div class="col-xs-6 chart-values">
+            <small>day range</small>
+            <div class="minmax"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+ $(document).ready(function() {
+	
+	$.getJSON('http://14.136.246.163:8000/graph/json/', function(data) {          
+		var series = [];
+		for(var i = 0; i < data.results.length; i++)
+			series.push([new Date(data.results[i].datetime), data.results[i].last]);		
+		
+		var current_value = data.results[data.results.length-1].last.toFixed(2);
+		var previous_value =  data.results[data.results.length-2].last.toFixed(2);	
+		var difference = 0;
+		var diff_per = 0;					
+		difference = (current_value - previous_value).toFixed(2);
+		diff_per = (difference / current_value * 100).toFixed(2);
+
+		console.log(difference);
+		console.log(diff_per);
+		
+		if(difference >=0) {
+			difference = '+' + difference;
+			diff_per = '+' + diff_per + '%';
+			$(".lastprice").text(current_value);
+			$(".diff").text(difference);
+			$(".diff").css('color','#1ccc92');
+			$(".last").text(diff_per);
+			$(".last").css('color','#1ccc92');
+			
+			$('#signal').css('color','#1ccc92').removeClass("glyphicon-arrow-down").addClass("glyphicon-arrow-up");
+		} else {
+			$(".lastprice").text(current_value);
+			$(".diff").text(difference);
+			$(".diff").css('color','#FF433D');
+			$(".last").text(diff_per+'%')
+			$(".last").css('color','#FF433D');
+			
+			$('#signal').css('color','#FF433D').removeClass("glyphicon-arrow-up").addClass("glyphicon-arrow-down");
+		}
+		
+		var date = new Date(data.results[data.results.length-1].datetime);
+        $(".datedisp").text('As of ' +  date.getHours() + ':' + date.getMinutes() + ' EDT ' + (date.getMonth() + 1) + '/' + date.getDate() + '/' +  date.getFullYear());
+				
+		Highcharts.chart('chart-container', {
+			chart: {
+				zoomType: 'x'
+			},
+			title: {
+				text: 'Bitcoin Price Index'
+			},
+			subtitle: {
+				text: document.ontouchstart === undefined ?
+						'Click and drag in the plot area to zoom in' : 'Pinch the chart to zoom in'
+			},
+			xAxis: {
+				type: 'datetime'
+			},
+			yAxis: {
+				title: {
+					text: 'BTC Index'
+				}
+			},
+			legend: {
+				enabled: false
+			},
+			plotOptions: {
+				area: {
+					fillColor: {
+						linearGradient: {
+							x1: 0,
+							y1: 0,
+							x2: 0,
+							y2: 1
+						},
+						stops: [
+							[0, Highcharts.getOptions().colors[0]],
+							[1, Highcharts.Color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
+						]
+					},
+					marker: {
+						radius: 2
+					},
+					lineWidth: 1,
+					states: {
+						hover: {
+							lineWidth: 1
+						}
+					},
+					threshold: null
+				}
+			},
+
+			series: [{
+				type: 'area',
+				name: 'Bitcoin Price Index',
+				data: series
+				
+			}]			
+		});
+	});
+	
+	$.getJSON('http://14.136.246.163:8000/graph/openMaxMin/', function(data1) {
+	    
+		var temp1 = data1.open.toFixed(2);
+        var temp2 = data1.min.toFixed(2);
+		var temp3 = data1.max.toFixed(2);
+		var temp4 = 0;
+		
+		if(temp2 > temp3){
+		temp3 = temp4;
+		temp2 = temp3;
+		temp4 = temp2;
+		}
+		
+		$(".dataopen").text(temp1);
+		$(".minmax").text(temp3 + ' - ' + temp2);
+	
+	});
+	
+});
+	
+</script>
+</body>
+
+	
+</html>
